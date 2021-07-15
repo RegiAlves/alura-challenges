@@ -7,6 +7,30 @@ import ProfileSidebar from '../src/components/ProfileSidebar';
 
 <ProfileSidebar />
 
+function ProfileRelationsBox(propriedades){
+  return(
+    <ProfileRelationsBoxWrapper>
+    <h2 className="smallTitle">
+     {propriedades.title }({propriedades.items.length})
+    </h2>
+
+    <ul>
+      {/*seguidores.map((itemAtual) => {
+        return (
+          <li key={itemAtual}>
+            <a href={`https://${itemAtual}.png`}>
+              <img src={itemAtual.image} />
+              <span>{itemAtual.title}</span>
+            </a>
+          </li>
+        )
+      })*/}
+    </ul>
+  </ProfileRelationsBoxWrapper>
+  );
+}
+
+
 export default function Home() {
   const usuarioAleatorio = 'RegiAlves';
   const [comunidades, setComunidades] = React.useState([{
@@ -16,8 +40,6 @@ export default function Home() {
   }]);
   // const comunidades = comunidades[0];
   // const alteradorDeComunidades/setComunidades = comunidades[1];
-
-  console.log('Nosso teste', );
   // const comunidades = ['Alurakut'];
   const pessoasFavoritas = [
     'juunegreiros',
@@ -27,7 +49,19 @@ export default function Home() {
     'marcobrunodev',
     'felipefialho',
   ]
+//0-Pegar o array de dados do github
+const [seguidores, setSeguidores] = React.useState([]);
+React.useEffect(function(){
+  fetch('https://api.github.com/users/peas/followers')
+.then(function (respostaDoServidor) {
+  return respostaDoServidor.json();
+})
+.then(function(respostaCompleta){
+  setSeguidores(respostaCompleta);
+} )
+}, [])//roda só uma vez, por isso o array está vazio
 
+//1 -Criar um box que vai ter um map, baseado nos itens so array que pegamos no github
   return (
     <>
       <AlurakutMenu githubUser={usuarioAleatorio}/>
@@ -83,8 +117,10 @@ export default function Home() {
               </button>
             </form>
           </Box>
+        
         </div>
         <div className="profileRelationsArea" style={{ gridArea: 'profileRelationsArea' }}>
+          <ProfileRelationsBox title="Seguidores" items={seguidores}/>
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Comunidades ({comunidades.length})
