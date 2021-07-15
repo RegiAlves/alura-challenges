@@ -8,10 +8,12 @@ const GlobalStyle = createGlobalStyle`
   padding: 0;
   box-sizing: border-box;
 }
-body {
-   
+body {   
     font-family: sans-serif; 
     background-color: #D9E6F6;
+    background-image: url(https://images5.alphacoders.com/314/314574.png);
+    background-size: cover;
+    background-position: center;
   }
   #__next {
     display: flex;
@@ -30,6 +32,7 @@ ${AlurakutStyles};
 const theme = {
   colors: {
     primary: '#0070f3',
+    
   },
 }
 
