@@ -7,37 +7,35 @@ import ProfileSidebar from '../src/components/ProfileSidebar';
 
 <ProfileSidebar />
 
-function ProfileRelationsBox(propriedades){
-  return(
+//Aqui é uma function relacionada ao css do Box 
+function ProfileRelationsBox(propriedades) {
+  return (
     <ProfileRelationsBoxWrapper>
-    <h2 className="smallTitle">
-     {propriedades.title }({propriedades.items.length})
-    </h2>
-
-    <ul>
-      {/*seguidores.map((itemAtual) => {
-        return (
-          <li key={itemAtual}>
-            <a href={`https://${itemAtual}.png`}>
-              <img src={itemAtual.image} />
-              <span>{itemAtual.title}</span>
-            </a>
-          </li>
-        )
-      })*/}
-    </ul>
-  </ProfileRelationsBoxWrapper>
-  );
+      <h2 className="smallTitle">
+        {propriedades.title} ({propriedades.items.length})
+      </h2>
+      <ul>
+        {/* {seguidores.map((itemAtual) => {
+          return (
+            <li key={itemAtual}>
+              <a href={`https://github.com/${itemAtual}.png`}>
+                <img src={itemAtual.image} />
+                <span>{itemAtual.title}</span>
+              </a>
+            </li>
+          )
+        })} */}
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  )
 }
+
+
 
 
 export default function Home() {
   const usuarioAleatorio = 'RegiAlves';
-  const [comunidades, setComunidades] = React.useState([{
-    id: '0', 
-    title: 'Eu odeio acordar cedo',
-    image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
-  }]);
+  const [comunidades, setComunidades] = React.useState([]);
   // const comunidades = comunidades[0];
   // const alteradorDeComunidades/setComunidades = comunidades[1];
   // const comunidades = ['Alurakut'];
@@ -49,22 +47,58 @@ export default function Home() {
     'marcobrunodev',
     'felipefialho',
   ]
-//0-Pegar o array de dados do github
-const [seguidores, setSeguidores] = React.useState([]);
-React.useEffect(function(){
-  fetch('https://api.github.com/users/peas/followers')
-.then(function (respostaDoServidor) {
-  return respostaDoServidor.json();
-})
-.then(function(respostaCompleta){
-  setSeguidores(respostaCompleta);
-} )
-}, [])//roda só uma vez, por isso o array está vazio
+  const [seguidores, setSeguidores] = React.useState([]);
+  // 0 - Pegar o array de dados do github 
+  React.useEffect(function() {
+    // GET
+    fetch('https://api.github.com/users/peas/followers')
+    .then(function (respostaDoServidor) {
+      return respostaDoServidor.json();
+    })
+    .then(function(respostaCompleta) {
+      setSeguidores(respostaCompleta);
+    })
+   
 
-//1 -Criar um box que vai ter um map, baseado nos itens so array que pegamos no github
+    // API GraphQL
+    fetch('https://graphql.datocms.com/', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'b83e0c86f627c3e80f38a159c88c55',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ "query": `query {
+        allCommunities {
+          id 
+          title
+          image
+          slug
+        }
+      }` })
+    })
+
+
+    .then((response) => response.json()) // Pega o retorno do response.json() e já retorna
+    .then((respostaCompleta) => {
+      const comunidadesVindasDoDato = respostaCompleta.data.allCommunities;
+      console.log(comunidadesVindasDoDato)
+      setComunidades(comunidadesVindasDoDato)
+    })
+    // .then(function (response) {
+    //   return response.json()
+    // })
+
+  }, [])
+
+  console.log('seguidores antes do return', seguidores);
+
+  // 1 - Criar um box que vai ter um map, baseado nos items do array
+  // que pegamos do GitHub
+
   return (
     <>
-      <AlurakutMenu githubUser={usuarioAleatorio}/>
+      <AlurakutMenu />
       <MainGrid>
         {/* <Box style="grid-area: profileArea;"> */}
         <div className="profileArea" style={{ gridArea: 'profileArea' }}>
@@ -79,9 +113,11 @@ React.useEffect(function(){
             <OrkutNostalgicIconSet />
           </Box>
 
+
+
           <Box>
             <h2 className="subTitle">O que você deseja fazer?</h2>
-            <form onSubmit={function handleCriaComunidade(e) {
+            <form onSubmit={function handleCriaComunidade(e) {   //esse (e) significa evento
                 e.preventDefault();
                 const dadosDoForm = new FormData(e.target);
 
@@ -89,12 +125,24 @@ React.useEffect(function(){
                 console.log('Campo: ', dadosDoForm.get('image'));
 
                 const comunidade = {
-                  id: new Date().toISOString(),
-                  title: dadosDoForm.get('title'),
-                  image: dadosDoForm.get('image'),
+                  title: dadosDoForm.get('title'),//pegando os dados do form quando escrito titulo para enviar para o backend.
+                  image: dadosDoForm.get('image'),//pegando os dados do form quandp escrito imagem para enviar para o backend
+                  slug: usuarioAleatorio,
                 }
-                const comunidadesAtualizadas = [...comunidades, comunidade];
-                setComunidades(comunidadesAtualizadas)
+                fetch('/api/comunidades', { //busca na api comunidade o metodo de publicar
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(comunidade)
+                })
+                .then(async (response) => {
+                  const dados = await response.json();
+                  console.log(dados.registroCriado);
+                  const comunidade = dados.registroCriado;
+                  const comunidadesAtualizadas = [...comunidades, comunidade];
+                  setComunidades(comunidadesAtualizadas)
+                })
             }}>
               <div>
                 <input
@@ -111,16 +159,14 @@ React.useEffect(function(){
                   aria-label="Coloque uma URL para usarmos de capa"
                 />
               </div>
-
               <button>
                 Criar comunidade
               </button>
             </form>
           </Box>
-        
         </div>
         <div className="profileRelationsArea" style={{ gridArea: 'profileRelationsArea' }}>
-          <ProfileRelationsBox title="Seguidores" items={seguidores}/>
+          <ProfileRelationsBox title="Seguidores" items={seguidores} />
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Comunidades ({comunidades.length})
@@ -129,7 +175,7 @@ React.useEffect(function(){
               {comunidades.map((itemAtual) => {
                 return (
                   <li key={itemAtual.id}>
-                    <a href={`/users/${itemAtual.title}`}>
+                    <a href={`/communities/${itemAtual.id}`}>
                       <img src={itemAtual.image} />
                       <span>{itemAtual.title}</span>
                     </a>
@@ -138,6 +184,7 @@ React.useEffect(function(){
               })}
             </ul>
           </ProfileRelationsBoxWrapper>
+          
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas da comunidade ({pessoasFavoritas.length})
@@ -161,3 +208,66 @@ React.useEffect(function(){
     </>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
